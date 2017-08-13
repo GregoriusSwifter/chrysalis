@@ -1,0 +1,78 @@
+#define THREADS_H
+
+#ifndef COMMON_H
+#include "common.h"
+#endif
+
+#ifndef DEQUE_H
+#include "deque.h"
+#endif
+
+#ifndef MEM_H
+#include "mem.h"
+#endif
+
+typedef struct thread {
+	uint32  id;
+	deque_t jobs;
+	uint32 steal_req;
+	uint32 steal_ack;
+} thread_t;
+
+thread_t threads;
+uint32   threads_count = 0;
+
+typedef struct process {
+} process_t;
+
+void threads_init(uint32 thread_count) {
+	kmalloc(thread_count*sizeof(thread), 1, (uintptr *)threads);
+	threads_count = thread_count;
+}
+
+void threads_deinit(void) {
+	kfree(threads);
+	threads = NULL;
+}
+
+void thread_run(thread *worker) {
+	thread_t thief = threads[(worker.id-1) >= 0 ? worker.id-1 : threads_count];
+	thread_t victim = threads[(worker.id+1)%threads_count];
+	process_t job;
+
+	while (1) {
+		// Try to do work.
+		while(worker.tasks.size != 0) {
+			job = deque_pop(worker.jobs);
+			do(task);
+
+			// Check for thief trying to steal work from us.
+			if (worker.steal_req != -1) {
+				// Handle having work stolen.
+				for (uint64 i = 0; i < worker.steal_req, worker.jobs.size != 0; ++i) {
+					job = deque_pop(worker.jobs);
+					deque_push(thief.jobs, job);
+				}
+				thief.steal_ack = (i != -1) ? i : i-1; // This is a terrible. >:(
+				// I hope we never have i == -1 tasks...
+				worker.steal_req = 0;
+			}
+		}
+
+		// Try to steal work.
+		while (1) {
+			worker.steal_ack = -1;
+			victim.steal_req = 1+worker.steal_req;
+			while (worker.steal_ack == -1) {
+				sleep(0);
+			}
+
+			// Check whether we actually have work.
+			// Our victim could actually have acknowledged with no work to give,
+			// or we may have picked up work from elsewhere in the meantime.
+			if (worker.jobs.size != 0) {
+				break;
+			}
+		}
+	}
+}

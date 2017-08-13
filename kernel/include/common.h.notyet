@@ -1,0 +1,43 @@
+#define COMMON_H
+
+struct String {
+  uint8_t *str;
+  uint32_t len;
+};
+
+
+void reset(void);
+void hang(void);
+
+#define nelem(x)        (sizeof(x)/sizeof((x)[0]))
+#define nil             ((void*)0)
+
+// MONITOR STUFF
+/* The number of columns. */
+#define COLUMNS 80
+/* The number of lines. */
+#define LINES 24
+
+void monitor_put(uint8_t c);
+void monitor_clear();
+void monitor_write(uint8_t *c);
+static void monitor_apply_cursor();
+static void monitor_scroll();
+
+
+#define PANIC(msg) panic((uint8_t*)msg, (uint8_t*)__FILE__, (uint32_t)__LINE__);
+#define ASSERT(b) ((b) ? (void)0 : panic_assert((uint8_t*)__FILE__, (int32_t)__LINE__, #b))
+#define VIRT2REAL(a) a
+#define REAL2VIRT(a) a
+
+extern void panic(uint8_t *message, uint8_t *file, uint32_t line);
+extern void panic_assert(uint8_t *file, uint32_t line, uint8_t * desc);
+
+void bus_write(uint16_t port, uint8_t value);
+uint8_t bus_read(uint16_t port);
+uint16_t bus_readw(uint16_t port);
+
+void itoa(uint8_t *, int32_t, int32_t);
+void printf(const uint8_t *format, ...);
+void *memset(void *s, int32_t c, uint32_t n);
+//static inline void cpuid(int32_t code);

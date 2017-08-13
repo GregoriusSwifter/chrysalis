@@ -1,0 +1,44 @@
+#define PAGING_H
+
+#ifndef COMMON_H
+#include "common.h"
+#endif
+
+#ifndef INTERRUPTS_H
+#include "interrupts.h"
+#endif
+
+typedef struct page {
+    uint32_t is_present   : 1;  // are we in memory?
+    uint32_t is_writeable : 1;
+    uint32_t for_user     : 1;  // kernel's or user's
+    uint32_t was_read     : 1;  // read from since refresh?
+    uint32_t was_written  : 1;  // written to since refresh?
+    uint32_t unused       : 7;  // unused and reserved stuff
+    uint32_t frame        : 20; // frame address
+} page_t;
+
+typedef struct page_table {
+    page_t pages[1024];
+} page_table_t;
+
+typedef struct page_directory {
+    page_table_t *tables[1024];
+    uintptr_t tables_physical[1024];
+    uintptr_t physicals_addr; // addr of tables_physical
+} page_directory_t;
+
+// frame related
+static void set_frame(uintptr_t frame_addr);
+static void clear_frame(uintptr_t frame_addr);
+static bool test_frame(uintptr_t frame_addr);
+static uintptr_t get_free_frame();
+void frame_alloc(page_t *page, bool for_kernel, bool is_writeable);
+void frame_free(page_t *page);
+
+// paging related
+void initialize_paging();
+void load_page_directory(page_directory_t *new);
+page_t *get_page(uintptr_t address, bool make, page_directory_t *dir);
+void page_fault(regs_t registers);
+

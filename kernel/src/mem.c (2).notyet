@@ -1,0 +1,39 @@
+#ifndef MEM_H
+#include "mem.h"
+#endif
+
+extern uintptr_t kend; // defined in the linker script
+uintptr_t placement_address;
+
+void kmeminit(void) {
+    placement_address = (uintptr_t) &kend;
+}
+
+uintptr_t kmalloc(uint32_t size, bool align, uintptr_t *phys) {
+
+    if (align && (placement_address & 0xFFFFF000)) { // if not already page aligned
+        placement_address &= 0xFFFFF000;
+        placement_address += 0x1000;
+    }
+
+    if (phys) {
+        *phys = placement_address;
+    }
+
+    uintptr_t tmp = placement_address;
+    placement_address += size;
+    printf((uint8_t*)"kmalloc: loc=0x%x size=%d align=%d phys=0x%x\n", tmp, size, align, phys);
+    return tmp;
+}
+
+uintptr_t kmalloc_a(uint32_t size) {
+    return kmalloc(size, 1, 0);
+}
+
+uintptr_t kmalloc_p(uint32_t size, uintptr_t *phys) {
+    return kmalloc(size, 0, phys);
+}
+
+uintptr_t kmalloc_ap(uint32_t size, uintptr_t *phys) {
+    return kmalloc(size, 1, phys);
+}

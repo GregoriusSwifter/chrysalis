@@ -1,0 +1,88 @@
+#define INSPECT_H
+
+#ifndef COMMON_H
+#include "common.h"
+#endif
+
+
+enum cpuid_requests {
+    CPUID_GETVENDORSTRING,
+    CPUID_GETFEATURES,
+    CPUID_GETTLB,
+    CPUID_GETSERIAL,
+ 
+    CPUID_INTELEXTENDED=0x80000000,
+    CPUID_INTELFEATURES,
+    CPUID_INTELBRANDSTRING,
+    CPUID_INTELBRANDSTRINGMORE,
+    CPUID_INTELBRANDSTRINGEND,
+};
+
+enum cpuid_vendors {
+    cpuid_v_unknown,    //
+    cpuid_v_amd,        // 
+    cpuid_v_intel,      // 
+    cpuid_v_via,        // 
+    cpuid_v_transmeta,  // x86 only
+    cpuid_v_cyrix,      // x86 only
+    cpuid_v_centaur,    //
+    cpuid_v_nexgen,     // x86 only???
+    cpuid_v_umc,        // ???
+    cpuid_v_sis,        // ???
+    cpuid_v_nsc,        // x86 only
+    cpuid_v_rise        // x86 only
+};
+
+#define CPUID_VENDOR_OLDAMD       "AMDisbetter!"
+#define CPUID_VENDOR_AMD          "AuthenticAMD"
+#define CPUID_VENDOR_INTEL        "GenuineIntel"
+#define CPUID_VENDOR_VIA          "CentaurHauls"
+#define CPUID_VENDOR_OLDTRANSMETA "TransmetaCPU"
+#define CPUID_VENDOR_TRANSMETA    "GenuineTMx86"
+#define CPUID_VENDOR_CYRIX        "CyrixInstead"
+#define CPUID_VENDOR_CENTAUR      "CentaurHauls"
+#define CPUID_VENDOR_NEXGEN       "NexGenDriven"
+#define CPUID_VENDOR_UMC          "UMC UMC UMC "
+#define CPUID_VENDOR_SIS          "SiS SiS SiS "
+#define CPUID_VENDOR_NSC          "Geode by NSC"
+#define CPUID_VENDOR_RISE         "RiseRiseRise"
+
+
+bool cpuid_supported = 0;
+uint32 cpuid_max_std = 0;
+uint32 cpuid_max_ext = 0;
+uint32 cpuid_vendor = 0;
+
+
+
+
+static inline bool cpuid_init(void) {
+    // Determine CPUID support.
+    bool cpuid_supported = 0;
+    __asm__("pushfd;"
+            "pop %%eax;"
+            "mov %%eax, %0;"
+            "xor $0x00200000, %%eax;"
+            "push %%eax;"
+            "popfd;"
+            "pushfd;"
+            "pop %%eax;"
+            "xor %%eax, %0;"
+            : "=r" (cpuid_supported)
+            :: "%eax");
+    if (cpuid_supported == 0) {
+        CPUID_SUPPORTED = 0;
+        return 0;
+    }
+    CPUID_SUPPORTED = 1;
+    
+    // Determine vendor and number of standard
+    // and extended cpuid calls
+    
+    
+    return 1;
+}
+
+static inline void cpuid(int32 code, uint32 *a, uint32 *d) {
+    __asm__ volatile("cpuid" : "=a" (*a), "=d" (*d) : "0" (code) : "ecx", "ebx");
+}

@@ -1,0 +1,57 @@
+__asm__(".code16gcc;");
+__asm__("jmpl $0, $main;");
+
+#define ASM __asm__ __volatile__
+#define NOINLINE __attribute__((noinline))
+#define REGPARM(x) __attribute__((regparm(x)))
+#define NORETURN __attribute__((noreturn))
+
+void NOINLINE REGPARM(3) print(const char *s) {
+	while (*s) {
+		ASM("int $0x10;"
+			:
+			:"a"(0x0E00 | *s++), "b"(7)
+			);
+	}
+}
+
+unsigned int check_a20_on() {
+	unsigned int is_enabled = 0;
+	ASM("xor %%ax, %%ax;"
+		"mov %%ax, %%es;"
+		"not %%ax;"
+		"mov %%ax, %%ds;"
+		"mov $0x0500, %%di;"
+		"mov $0x0510, %%si;"
+		"movb %%es:(%%di), %%al;"
+		"push %%ax;"
+		"movb %%ds:(%%si), %%al;"
+		"push %%ax;"
+		"movb $0x00, %%es:(%%di);"
+		"movb $0xFF, %%ds:(%%si);"
+		"movb %%es:(%%di), %0;"
+		"pop %%ax;"
+		"movb %%al, %%ds:(%%si);"
+		"pop %%ax;"
+		"movb %%al, %%es:(%%di);"
+		:"=r"(is_enabled)
+		:
+		:"%ax", "%di", "%si");
+	return (is_enabled == 0xFF);
+}
+
+int NORETURN main() {
+	print("Oh baby!\r\n");
+
+	if (check_a20_on()) {
+		print("Awwww yeah!\r\n");
+	} else {
+		print("Ohhhh nooo!\r\n");
+	}
+
+	print("What happent?\r\n");
+
+	while (1) {
+		ASM("hlt");
+	}
+}
